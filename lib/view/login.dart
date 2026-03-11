@@ -15,20 +15,17 @@ class loginpage extends StatelessWidget {
 
     final _formKey = GlobalKey<FormBuilderState>();
 
-
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
-    void _submitform(){
-      if(_formKey.currentState!.saveAndValidate()){
-        final email =  emailController.text;
+    void _submitform() {
+      if (_formKey.currentState!.saveAndValidate()) {
+        final email = emailController.text;
         final password = passwordController.text;
         userControl.login(email, password);
-      }else{
+      } else {
         Get.snackbar("Error", "You need pollute the field");
       }
     }
-
-
 
     return SafeArea(
       child: Padding(
@@ -58,10 +55,7 @@ class loginpage extends StatelessWidget {
                     FormBuilderTextField(
                       name: "password",
                       controller: passwordController,
-                      validator: FormBuilderValidators.compose([
-                        FormBuilderValidators.password(),
-                        FormBuilderValidators.required()
-                      ]),
+                      validator: FormBuilderValidators.required(),
                       decoration: InputDecoration(
                         labelText: 'Password',
                         border: OutlineInputBorder(),
@@ -70,9 +64,25 @@ class loginpage extends StatelessWidget {
                   ],
                 ),
               ),
-              TextButton(onPressed: () {
-                _submitform();
-              }, child: Text('Login')),
+              MaterialButton(color: Colors.blue,
+                elevation: 10,
+                onPressed: () {},
+                shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.all(Radius.circular(20))),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Login",style: kheadingB20,),
+                ),
+              ),
+              // TextButton(
+              //   onPressed: () {
+              //     _submitform();
+              //   },
+              //   child: Obx(
+              //     () => userControl.isLoading.value
+              //         ? CircularProgressIndicator()
+              //         : Text('Login'),
+              //   ),
+              // ),
             ],
           ),
         ),
