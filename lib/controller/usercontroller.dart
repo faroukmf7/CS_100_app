@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:cs_100_project/constants.dart';
 import 'package:cs_100_project/model/user_model.dart';
+import 'package:cs_100_project/view/home_view.dart';
+import 'package:cs_100_project/view/login.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 class UserController extends GetxController {
   Rx<UserModel?> currentUser = Rx<UserModel?>(null);
+
   RxBool isLoading = false.obs;
 
   final baseURL = endpoint;
@@ -24,6 +27,7 @@ class UserController extends GetxController {
         if(data["status"] == true){
           currentUser.value=UserModel.fromjson(data["user"]);
           Get.snackbar("Success", data["message"]);
+          Get.to(()=>HomeScreen());
         }else{
           Get.snackbar("Failed", data['message']);
         }
@@ -35,5 +39,10 @@ class UserController extends GetxController {
       print("$e");
     }
     isLoading.value = false;
+  }
+
+  void logout(){
+    currentUser.value = null;
+    Get.to(Loginpage());
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cs_100_project/constants.dart';
+import 'package:cs_100_project/controller/usercontroller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:get/get.dart';
@@ -49,6 +50,8 @@ class Resgistercontroller extends GetxController {
         Get.snackbar('Error creating account', data['message']);
         isLoading.value=false;
       }else{
+        final userCtrl = Get.put(UserController());
+        await userCtrl.login(email, password);
 
       }
     } catch (exception) {

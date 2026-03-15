@@ -1,6 +1,8 @@
+import 'package:cs_100_project/view/home_view.dart';
 import 'package:cs_100_project/view/login.dart';
 import 'package:cs_100_project/view/registeration.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 
 void main() {
@@ -14,13 +16,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-    home: Scaffold(
-      appBar: AppBar(
-        title: Text("Login"),
-      ),
-      body: RegisterScreen(),
-    ),
+      title: 'Attandance',
+      home: Loginpage(),
+      // initialRoute: '/login',
+      // getPages: [
+      //   GetPage(name: '/login', page: () => Loginpage()),
+      //   GetPage(name: '/register', page: () => RegisterScreen()),
+      //   GetPage(name: '/home', page: ()=>HomeScreen()),
+      // ],
     );
   }
 }
-
