@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:cs_100_project/constants.dart';
 import 'package:cs_100_project/model/user_model.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,7 @@ class UserController extends GetxController {
   Rx<UserModel?> currentUser = Rx<UserModel?>(null);
   RxBool isLoading = false.obs;
 
-  final baseURL = 'http://192.168.43.34/test/';
+  final baseURL = endpoint;
 
   Future<void> login(String email, String password) async {
     isLoading.value = true;

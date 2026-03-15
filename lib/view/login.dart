@@ -66,13 +66,18 @@ class loginpage extends StatelessWidget {
               ),
               MaterialButton(color: Colors.blue,
                 elevation: 10,
-                onPressed: () {},
+                onPressed: () {
+                  _submitform();
+                },
                 shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.all(Radius.circular(20))),
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text("Login",style: kheadingB20,),
+                  child: Obx(
+                        () => userControl.isLoading.value
+                            ? CircularProgressIndicator()
+                            : Text('Login'),
                 ),
-              ),
+              )),
               // TextButton(
               //   onPressed: () {
               //     _submitform();
