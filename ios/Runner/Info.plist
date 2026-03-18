@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>AttendEase needs your location to verify you are in the classroom.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>AttendEase needs your location for class attendance verification.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Camera is needed to scan QR codes for check-in.</string>
 </dict>
 </plist>
