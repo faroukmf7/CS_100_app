@@ -1,10 +1,14 @@
 // lib/main.dart
 // ─────────────────────────────────────────
-// App entry point. GetMaterialApp wired with:
-//   - Named routes (AppPages)
-//   - Global dependency injection (AppBindings)
-//   - Theme (light + dark via ThemeController)
-//   - Initial route: /splash
+// FIX: Removed Obx() wrapper from GetMaterialApp.
+//
+// GetMaterialApp must NEVER be wrapped in Obx(), StreamBuilder,
+// or any reactive widget. Doing so causes GetX to destroy and
+// re-create its internal Navigator key on every rebuild, which
+// breaks all navigation with "contextless navigation" errors.
+//
+// Theme switching works via Get.changeTheme() in ThemeController
+// which updates the theme IN-PLACE without rebuilding GetMaterialApp.
 // ─────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -20,26 +24,21 @@ import 'routes/app_pages.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ── Initialise local storage ───────────────────────────────────────────────
   await GetStorage.init();
 
-  // ── Lock orientation to portrait ───────────────────────────────────────────
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
 
-  // ── Transparent status bar ─────────────────────────────────────────────────
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
 
-  // Register ThemeController once here, permanently, before the widget tree
-  // is built. Doing it inside build() caused it to re-register on every Obx
-  // rebuild, which created subtle lifecycle issues.
-  Get.put(ThemeController(), permanent: true);
+  // Register ThemeController ONCE, BEFORE runApp, BEFORE the widget tree.
+  // permanent: true = never disposed by GetX route management.
+  Get.put<ThemeController>(ThemeController(), permanent: true);
 
   runApp(const AttendEaseApp());
 }
@@ -49,29 +48,22 @@ class AttendEaseApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Find the already-registered ThemeController — never put() here.
     final themeCtrl = Get.find<ThemeController>();
 
-    return Obx(() => GetMaterialApp(
+    // ✅ CORRECT: Return GetMaterialApp directly — NO Obx, NO wrapper.
+    // Theme changes go through Get.changeTheme() which does not rebuild this.
+    return GetMaterialApp(
       title: AppConstants.kAppName,
       debugShowCheckedModeBanner: false,
-
-      // ── Theme ────────────────────────────────────────────────────────────
-      theme: AppTheme.lightTheme,
+      theme:     AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeCtrl.isDark.value ? ThemeMode.dark : ThemeMode.light,
-
-      // ── Routes ───────────────────────────────────────────────────────────
-      initialRoute: AppRoutes.splash,
-      getPages: AppPages.routes,
+      initialRoute:      AppRoutes.splash,
+      getPages:          AppPages.routes,
       defaultTransition: Transition.fadeIn,
-
-      // ── Global DI ────────────────────────────────────────────────────────
-      initialBinding: AppBindings(),
-
-      // ── Locale (multi-language ready) ─────────────────────────────────────
-      locale: const Locale('en', 'US'),
-      fallbackLocale: const Locale('en', 'US'),
-    ));
+      initialBinding:    AppBindings(),
+      locale:            const Locale('en', 'US'),
+      fallbackLocale:    const Locale('en', 'US'),
+    );
   }
 }

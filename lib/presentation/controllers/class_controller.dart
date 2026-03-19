@@ -1,8 +1,16 @@
 // lib/presentation/controllers/class_controller.dart
 // ─────────────────────────────────────────
-// Manages class list, creation, editing, deletion.
-// Admin/Rep only for create/edit/delete.
-// Both roles can view class list.
+// FIX: Removed formKey (GlobalKey<FormState>) from this controller.
+//
+// A GlobalKey must be owned by the widget State that uses it — not by
+// a permanent singleton controller. When CreateClassScreen is pushed
+// a second time (e.g. editing a different class), Flutter finds the same
+// GlobalKey instance already attached to a previous widget that may still
+// be in the tree during the transition, causing:
+//   "Multiple widgets used the same GlobalKey"
+//
+// The formKey now lives in CreateClassScreen itself (as a local final field).
+// Controller methods that need validation now receive the key as a parameter.
 // ─────────────────────────────────────────
 
 import 'package:flutter/material.dart';
@@ -17,27 +25,30 @@ class ClassController extends GetxController {
   ClassController(this._classRepo);
 
   // ── Observables ───────────────────────────────────────────────────────────
-  final RxList<ClassModel>  classList    = <ClassModel>[].obs;
-  final RxBool              isLoading    = false.obs;
-  final RxBool              isSaving     = false.obs;
+  final RxList<ClassModel>  classList     = <ClassModel>[].obs;
+  final RxBool              isLoading     = false.obs;
+  final RxBool              isSaving      = false.obs;
   final Rx<ClassModel?>     selectedClass = Rx<ClassModel?>(null);
 
-  // Create/Edit form
+  // Form field controllers — safe in a permanent controller because they are
+  // not GlobalKeys; they hold text state and do not attach to a widget position.
   final nameCtrl        = TextEditingController();
   final descCtrl        = TextEditingController();
   final courseCodeCtrl  = TextEditingController();
   final instructorCtrl  = TextEditingController();
   final radiusCtrl      = TextEditingController(text: '50');
   final semesterCtrl    = TextEditingController();
-  final formKey         = GlobalKey<FormState>();
 
-  final RxDouble pickedLat    = 0.0.obs;
-  final RxDouble pickedLng    = 0.0.obs;
-  final RxInt    selectedDay  = 0.obs;
-  final RxInt    startHour    = 8.obs;
-  final RxInt    startMinute  = 0.obs;
-  final RxInt    endHour      = 9.obs;
-  final RxInt    endMinute    = 0.obs;
+  // formKey is intentionally NOT here — see file header above.
+  // It lives as a local field in CreateClassScreen.
+
+  final RxDouble pickedLat      = 0.0.obs;
+  final RxDouble pickedLng      = 0.0.obs;
+  final RxInt    selectedDay    = 0.obs;
+  final RxInt    startHour      = 8.obs;
+  final RxInt    startMinute    = 0.obs;
+  final RxInt    endHour        = 9.obs;
+  final RxInt    endMinute      = 0.obs;
   final RxBool   locationPicked = false.obs;
 
   @override
@@ -48,8 +59,12 @@ class ClassController extends GetxController {
 
   @override
   void onClose() {
-    nameCtrl.dispose(); descCtrl.dispose(); courseCodeCtrl.dispose();
-    instructorCtrl.dispose(); radiusCtrl.dispose(); semesterCtrl.dispose();
+    nameCtrl.dispose();
+    descCtrl.dispose();
+    courseCodeCtrl.dispose();
+    instructorCtrl.dispose();
+    radiusCtrl.dispose();
+    semesterCtrl.dispose();
     super.onClose();
   }
 
@@ -66,7 +81,9 @@ class ClassController extends GetxController {
   }
 
   // ── Create Class ──────────────────────────────────────────────────────────
-  Future<void> createClass(int adminId) async {
+  // formKey is passed in from the widget so validation runs against the
+  // correct live form state (not a stale controller-held key).
+  Future<void> createClass(int adminId, GlobalKey<FormState> formKey) async {
     if (!formKey.currentState!.validate()) return;
     if (!locationPicked.value) {
       _showError('Please pick the classroom location on the map.');
@@ -74,21 +91,21 @@ class ClassController extends GetxController {
     }
     isSaving.value = true;
     final model = ClassModel(
-      id: 0,
-      name:          nameCtrl.text.trim(),
-      description:   descCtrl.text.trim(),
-      courseCode:    courseCodeCtrl.text.trim(),
-      instructor:    instructorCtrl.text.trim(),
-      classLat:      pickedLat.value,
-      classLng:      pickedLng.value,
-      radiusMetres:  double.tryParse(radiusCtrl.text) ?? 50.0,
-      dayOfWeek:     selectedDay.value,
-      startHour:     startHour.value,
-      startMinute:   startMinute.value,
-      endHour:       endHour.value,
-      endMinute:     endMinute.value,
-      semester:      semesterCtrl.text.trim(),
-      createdById:   adminId,
+      id:           0,
+      name:         nameCtrl.text.trim(),
+      description:  descCtrl.text.trim(),
+      courseCode:   courseCodeCtrl.text.trim(),
+      instructor:   instructorCtrl.text.trim(),
+      classLat:     pickedLat.value,
+      classLng:     pickedLng.value,
+      radiusMetres: double.tryParse(radiusCtrl.text) ?? 50.0,
+      dayOfWeek:    selectedDay.value,
+      startHour:    startHour.value,
+      startMinute:  startMinute.value,
+      endHour:      endHour.value,
+      endMinute:    endMinute.value,
+      semester:     semesterCtrl.text.trim(),
+      createdById:  adminId,
     );
     final result = await _classRepo.createClass(model);
     isSaving.value = false;
@@ -103,25 +120,25 @@ class ClassController extends GetxController {
   }
 
   // ── Update Class ──────────────────────────────────────────────────────────
-  Future<void> updateClass(int classId) async {
+  Future<void> updateClass(int classId, GlobalKey<FormState> formKey) async {
     if (!formKey.currentState!.validate()) return;
     isSaving.value = true;
     final model = ClassModel(
-      id: classId,
-      name:        nameCtrl.text.trim(),
-      description: descCtrl.text.trim(),
-      courseCode:  courseCodeCtrl.text.trim(),
-      instructor:  instructorCtrl.text.trim(),
-      classLat:    pickedLat.value,
-      classLng:    pickedLng.value,
+      id:           classId,
+      name:         nameCtrl.text.trim(),
+      description:  descCtrl.text.trim(),
+      courseCode:   courseCodeCtrl.text.trim(),
+      instructor:   instructorCtrl.text.trim(),
+      classLat:     pickedLat.value,
+      classLng:     pickedLng.value,
       radiusMetres: double.tryParse(radiusCtrl.text) ?? 50.0,
-      dayOfWeek:   selectedDay.value,
-      startHour:   startHour.value,
-      startMinute: startMinute.value,
-      endHour:     endHour.value,
-      endMinute:   endMinute.value,
-      semester:    semesterCtrl.text.trim(),
-      createdById: 0,
+      dayOfWeek:    selectedDay.value,
+      startHour:    startHour.value,
+      startMinute:  startMinute.value,
+      endHour:      endHour.value,
+      endMinute:    endMinute.value,
+      semester:     semesterCtrl.text.trim(),
+      createdById:  0,
     );
     final result = await _classRepo.updateClass(model);
     isSaving.value = false;
@@ -148,37 +165,43 @@ class ClassController extends GetxController {
 
   // ── Pre-fill edit form ────────────────────────────────────────────────────
   void prepareEditForm(ClassModel c) {
-    nameCtrl.text       = c.name;
-    descCtrl.text       = c.description;
-    courseCodeCtrl.text = c.courseCode;
-    instructorCtrl.text = c.instructor;
-    radiusCtrl.text     = c.radiusMetres.toString();
-    semesterCtrl.text   = c.semester;
-    pickedLat.value     = c.classLat;
-    pickedLng.value     = c.classLng;
-    selectedDay.value   = c.dayOfWeek;
-    startHour.value     = c.startHour;
-    startMinute.value   = c.startMinute;
-    endHour.value       = c.endHour;
-    endMinute.value     = c.endMinute;
+    nameCtrl.text        = c.name;
+    descCtrl.text        = c.description;
+    courseCodeCtrl.text  = c.courseCode;
+    instructorCtrl.text  = c.instructor;
+    radiusCtrl.text      = c.radiusMetres.toString();
+    semesterCtrl.text    = c.semester;
+    pickedLat.value      = c.classLat;
+    pickedLng.value      = c.classLng;
+    selectedDay.value    = c.dayOfWeek;
+    startHour.value      = c.startHour;
+    startMinute.value    = c.startMinute;
+    endHour.value        = c.endHour;
+    endMinute.value      = c.endMinute;
     locationPicked.value = true;
   }
 
   void setPickedLocation(double lat, double lng) {
-    pickedLat.value = lat;
-    pickedLng.value = lng;
+    pickedLat.value      = lat;
+    pickedLng.value      = lng;
     locationPicked.value = true;
   }
 
   void _clearForm() {
-    nameCtrl.clear(); descCtrl.clear(); courseCodeCtrl.clear();
-    instructorCtrl.clear(); radiusCtrl.text = '50'; semesterCtrl.clear();
-    pickedLat.value = 0; pickedLng.value = 0;
+    nameCtrl.clear();
+    descCtrl.clear();
+    courseCodeCtrl.clear();
+    instructorCtrl.clear();
+    radiusCtrl.text      = '50';
+    semesterCtrl.clear();
+    pickedLat.value      = 0;
+    pickedLng.value      = 0;
     locationPicked.value = false;
-    selectedDay.value = 0;
+    selectedDay.value    = 0;
   }
 
-  void _showSuccess(String msg) => Get.snackbar('✓ Done', msg,
+  void _showSuccess(String msg) => Get.snackbar(
+    '✓ Done', msg,
     snackPosition: SnackPosition.TOP,
     backgroundColor: const Color(0xFF10B981),
     colorText: Colors.white,
@@ -186,7 +209,8 @@ class ClassController extends GetxController {
     borderRadius: 12,
   );
 
-  void _showError(String msg) => Get.snackbar('Error', msg,
+  void _showError(String msg) => Get.snackbar(
+    'Error', msg,
     snackPosition: SnackPosition.TOP,
     backgroundColor: const Color(0xFFEF4444),
     colorText: Colors.white,

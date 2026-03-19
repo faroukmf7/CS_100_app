@@ -1,7 +1,9 @@
 // lib/presentation/screens/admin/create_class_screen.dart
-// Admin creates or edits a class. Crucially: picks classroom
-// geolocation on an interactive map. That lat/lng is stored
-// and used as the anchor for all student check-ins.
+// ─────────────────────────────────────────
+// FIX: formKey now lives here as a StatefulWidget State field, not in the
+// controller. This prevents "Multiple widgets used the same GlobalKey".
+// Controller methods createClass() and updateClass() now receive the key.
+// ─────────────────────────────────────────
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,21 +18,39 @@ import '../../controllers/class_controller.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 
-class CreateClassScreen extends StatelessWidget {
+class CreateClassScreen extends StatefulWidget {
   const CreateClassScreen({super.key});
 
   @override
+  State<CreateClassScreen> createState() => _CreateClassScreenState();
+}
+
+class _CreateClassScreenState extends State<CreateClassScreen> {
+  // formKey lives here — created once per widget instance, disposed with it.
+  final _formKey = GlobalKey<FormState>();
+
+  late final ClassController _ctrl;
+  late final AuthController  _auth;
+  late final bool  _isEditing;
+  late final int   _classId;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl      = Get.find<ClassController>();
+    _auth      = Get.find<AuthController>();
+    final args = Get.arguments as Map<String, dynamic>? ?? {};
+    _isEditing = args['editing'] == true;
+    _classId   = args['id'] as int? ?? 0;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final ctrl     = Get.find<ClassController>();
-    final auth     = Get.find<AuthController>();
-    final args     = Get.arguments as Map<String, dynamic>? ?? {};
-    final isEditing = args['editing'] == true;
-    final classId   = args['id'] as int? ?? 0;
-    final theme     = Theme.of(context);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Class' : 'New Class'),
+        title: Text(_isEditing ? 'Edit Class' : 'New Class'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_rounded),
           onPressed: () => Get.back(),
@@ -38,7 +58,7 @@ class CreateClassScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Form(
-          key: ctrl.formKey,
+          key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
@@ -49,7 +69,7 @@ class CreateClassScreen extends StatelessWidget {
               const SizedBox(height: 14),
 
               AppTextField(
-                controller: ctrl.nameCtrl,
+                controller: _ctrl.nameCtrl,
                 label: 'Class Name',
                 hint: 'e.g. Introduction to Computer Science',
                 prefixIcon: Icons.class_rounded,
@@ -62,7 +82,7 @@ class CreateClassScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: AppTextField(
-                      controller: ctrl.courseCodeCtrl,
+                      controller: _ctrl.courseCodeCtrl,
                       label: 'Course Code',
                       hint: 'CS 100',
                       prefixIcon: Icons.tag_rounded,
@@ -72,7 +92,7 @@ class CreateClassScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: AppTextField(
-                      controller: ctrl.semesterCtrl,
+                      controller: _ctrl.semesterCtrl,
                       label: 'Semester',
                       hint: '2025/26 Sem 1',
                       prefixIcon: Icons.calendar_month_outlined,
@@ -84,7 +104,7 @@ class CreateClassScreen extends StatelessWidget {
               const SizedBox(height: 14),
 
               AppTextField(
-                controller: ctrl.instructorCtrl,
+                controller: _ctrl.instructorCtrl,
                 label: 'Instructor',
                 hint: 'Prof. Kofi Asante',
                 prefixIcon: Icons.person_outline_rounded,
@@ -94,7 +114,7 @@ class CreateClassScreen extends StatelessWidget {
               const SizedBox(height: 14),
 
               AppTextField(
-                controller: ctrl.descCtrl,
+                controller: _ctrl.descCtrl,
                 label: 'Description (optional)',
                 hint: 'Brief description…',
                 prefixIcon: Icons.notes_rounded,
@@ -109,30 +129,30 @@ class CreateClassScreen extends StatelessWidget {
 
               const SizedBox(height: 14),
 
-              // Day picker
               Obx(() => _DayPicker(
-                selectedDay: ctrl.selectedDay.value,
-                onSelect: (d) => ctrl.selectedDay.value = d,
+                selectedDay: _ctrl.selectedDay.value,
+                onSelect: (d) => _ctrl.selectedDay.value = d,
               )).animate(delay: 160.ms).fadeIn(),
 
               const SizedBox(height: 14),
 
-              // Time pickers
               Obx(() => Row(
                 children: [
                   Expanded(
                     child: _TimeTile(
                       label: 'Start Time',
-                      hour: ctrl.startHour.value,
-                      minute: ctrl.startMinute.value,
+                      hour: _ctrl.startHour.value,
+                      minute: _ctrl.startMinute.value,
                       onTap: () async {
                         final t = await showTimePicker(
                           context: context,
-                          initialTime: TimeOfDay(hour: ctrl.startHour.value, minute: ctrl.startMinute.value),
+                          initialTime: TimeOfDay(
+                              hour: _ctrl.startHour.value,
+                              minute: _ctrl.startMinute.value),
                         );
                         if (t != null) {
-                          ctrl.startHour.value   = t.hour;
-                          ctrl.startMinute.value = t.minute;
+                          _ctrl.startHour.value   = t.hour;
+                          _ctrl.startMinute.value = t.minute;
                         }
                       },
                     ),
@@ -143,16 +163,18 @@ class CreateClassScreen extends StatelessWidget {
                   Expanded(
                     child: _TimeTile(
                       label: 'End Time',
-                      hour: ctrl.endHour.value,
-                      minute: ctrl.endMinute.value,
+                      hour: _ctrl.endHour.value,
+                      minute: _ctrl.endMinute.value,
                       onTap: () async {
                         final t = await showTimePicker(
                           context: context,
-                          initialTime: TimeOfDay(hour: ctrl.endHour.value, minute: ctrl.endMinute.value),
+                          initialTime: TimeOfDay(
+                              hour: _ctrl.endHour.value,
+                              minute: _ctrl.endMinute.value),
                         );
                         if (t != null) {
-                          ctrl.endHour.value   = t.hour;
-                          ctrl.endMinute.value = t.minute;
+                          _ctrl.endHour.value   = t.hour;
+                          _ctrl.endMinute.value = t.minute;
                         }
                       },
                     ),
@@ -170,72 +192,72 @@ class CreateClassScreen extends StatelessWidget {
 
               Text(
                 'Tap on the map to pin the exact classroom location. '
-                'Students must be within the radius to check in.',
+                    'Students must be within the radius to check in.',
                 style: theme.textTheme.bodySmall,
               ).animate(delay: 210.ms).fadeIn(),
 
               const SizedBox(height: 14),
 
-              // Radius slider
               Obx(() => _RadiusSlider(
-                value: double.tryParse(ctrl.radiusCtrl.text) ?? 50,
-                onChanged: (v) => ctrl.radiusCtrl.text = v.toStringAsFixed(0),
+                value: double.tryParse(_ctrl.radiusCtrl.text) ?? 50,
+                onChanged: (v) => _ctrl.radiusCtrl.text = v.toStringAsFixed(0),
               )).animate(delay: 220.ms).fadeIn(),
 
               const SizedBox(height: 14),
 
-              // Interactive map for location picking
-              _LocationPicker(ctrl: ctrl).animate(delay: 240.ms).fadeIn(),
+              _LocationPicker(ctrl: _ctrl).animate(delay: 240.ms).fadeIn(),
 
               const SizedBox(height: 8),
 
-              Obx(() => ctrl.locationPicked.value
+              Obx(() => _ctrl.locationPicked.value
                   ? Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.kSecondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.kSecondary.withOpacity(0.3)),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.kSecondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.kSecondary.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_rounded, color: AppTheme.kSecondary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Lat: ${_ctrl.pickedLat.value.toStringAsFixed(6)}, '
+                            'Lng: ${_ctrl.pickedLng.value.toStringAsFixed(6)}',
+                        style: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppTheme.kSecondary),
                       ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle_rounded, color: AppTheme.kSecondary, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Lat: ${ctrl.pickedLat.value.toStringAsFixed(6)}, Lng: ${ctrl.pickedLng.value.toStringAsFixed(6)}',
-                              style: const TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppTheme.kSecondary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                    ),
+                  ],
+                ),
+              )
                   : Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppTheme.kWarning.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppTheme.kWarning.withOpacity(0.3)),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.warning_amber_rounded, color: AppTheme.kWarning, size: 16),
-                          SizedBox(width: 8),
-                          Text('Tap map to set classroom location', style: TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppTheme.kWarning)),
-                        ],
-                      ),
-                    )),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.kWarning.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppTheme.kWarning.withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: AppTheme.kWarning, size: 16),
+                    SizedBox(width: 8),
+                    Text('Tap map to set classroom location',
+                        style: TextStyle(fontSize: 12, fontFamily: 'Nunito', color: AppTheme.kWarning)),
+                  ],
+                ),
+              )),
 
               const SizedBox(height: 32),
 
-              // ── Save button ─────────────────────────────────────────────
+              // ── Save button — passes _formKey to controller ────────────────
               Obx(() => AppButton(
-                label: isEditing ? 'Save Changes' : 'Create Class',
-                icon: isEditing ? Icons.save_rounded : Icons.check_rounded,
-                isLoading: ctrl.isSaving.value,
-                onPressed: () => isEditing
-                    ? ctrl.updateClass(classId)
-                    : ctrl.createClass(auth.currentUser.value!.id),
+                label:    _isEditing ? 'Save Changes' : 'Create Class',
+                icon:     _isEditing ? Icons.save_rounded : Icons.check_rounded,
+                isLoading: _ctrl.isSaving.value,
+                onPressed: () => _isEditing
+                    ? _ctrl.updateClass(_classId, _formKey)
+                    : _ctrl.createClass(_auth.currentUser.value!.id, _formKey),
               )).animate(delay: 280.ms).slideY(begin: 0.2, end: 0, duration: 300.ms).fadeIn(),
 
               const SizedBox(height: 40),
@@ -246,6 +268,8 @@ class CreateClassScreen extends StatelessWidget {
     );
   }
 }
+
+// ── Sub-widgets (unchanged from original) ─────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String title;
@@ -376,10 +400,10 @@ class _RadiusSlider extends StatelessWidget {
           activeColor: AppTheme.kPrimary,
           onChanged: onChanged,
         ),
-        Row(
+        const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            Text('10m (tight)', style: TextStyle(fontSize: 11, color: AppTheme.kTextSecondary, fontFamily: 'Nunito')),
+          children: [
+            Text('10m (tight)',  style: TextStyle(fontSize: 11, color: AppTheme.kTextSecondary, fontFamily: 'Nunito')),
             Text('200m (loose)', style: TextStyle(fontSize: 11, color: AppTheme.kTextSecondary, fontFamily: 'Nunito')),
           ],
         ),
@@ -398,8 +422,7 @@ class _LocationPicker extends StatefulWidget {
 
 class _LocationPickerState extends State<_LocationPicker> {
   final _mapCtrl = MapController();
-  // Default: Accra, Ghana (you can change this default)
-  LatLng _center = const LatLng(5.6037, -0.1870);
+  final _center  = const LatLng(5.6037, -0.1870); // Default: Accra, Ghana
 
   @override
   Widget build(BuildContext context) {
@@ -456,7 +479,6 @@ class _LocationPickerState extends State<_LocationPicker> {
                     ),
                   ),
                 ]),
-              // Tap hint overlay
               if (!hasPick)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -472,7 +494,8 @@ class _LocationPickerState extends State<_LocationPicker> {
                           children: [
                             Icon(Icons.touch_app_rounded, color: Colors.white, size: 16),
                             SizedBox(width: 6),
-                            Text('Tap to pin classroom', style: TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'Nunito')),
+                            Text('Tap to pin classroom',
+                                style: TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'Nunito')),
                           ],
                         ),
                       ),
