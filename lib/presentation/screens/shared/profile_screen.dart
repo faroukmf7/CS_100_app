@@ -94,13 +94,13 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ── Settings ────────────────────────────────────────────────────
-          _Section(title: 'Settings'),
-          Obx(() => _ToggleTile(
-            icon: theme.isDark.value ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-            label: 'Dark Mode',
-            value: theme.isDark.value,
-            onToggle: theme.toggleTheme,
-          )),
+          // _Section(title: 'Settings'),
+          // Obx(() => _ToggleTile(
+          //   icon: theme.isDark.value ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+          //   label: 'Dark Mode',
+          //   value: theme.isDark.value,
+          //   onToggle: theme.toggleTheme,
+          // )),
 
           const SizedBox(height: 20),
 

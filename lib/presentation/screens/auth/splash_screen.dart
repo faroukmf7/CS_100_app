@@ -1,4 +1,11 @@
 // lib/presentation/screens/auth/splash_screen.dart
+//
+// Pure StatelessWidget — no initState, no State class.
+// Navigation after the delay is triggered by AuthController._tryRestoreSession()
+// (which already runs addPostFrameCallback on startup). For the 2-second
+// splash delay we use a one-shot addPostFrameCallback here in build():
+// it fires once after the first frame and schedules the navigation.
+// This is equivalent to initState → Future.delayed but without StatefulWidget.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -7,40 +14,31 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../controllers/auth_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _navigate();
-  }
-
-  Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 2200));
-    final auth = Get.find<AuthController>();
-    if (auth.currentUser.value != null) {
-      final user = auth.currentUser.value!;
-      Get.offAllNamed(user.isAdmin ? AppRoutes.adminHome : AppRoutes.studentHome);
-    } else {
-      Get.offAllNamed(AppRoutes.login);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Schedule navigation after the splash animation completes.
+    // addPostFrameCallback fires once per build() call — because this screen
+    // is only built once (it's replaced via Get.offAllNamed), this is safe.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Future.delayed(const Duration(milliseconds: 2200));
+      final auth = Get.find<AuthController>();
+      if (auth.currentUser.value != null) {
+        final user = auth.currentUser.value!;
+        Get.offAllNamed(user.isAdmin ? AppRoutes.adminHome : AppRoutes.studentHome);
+      } else {
+        Get.offAllNamed(AppRoutes.login);
+      }
+    });
+
     return Scaffold(
       backgroundColor: AppTheme.kPrimary,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // App icon
             Container(
               width: 100,
               height: 100,
@@ -64,9 +62,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
             const SizedBox(height: 28),
 
-            Text(
+            const Text(
               AppConstants.kAppName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,

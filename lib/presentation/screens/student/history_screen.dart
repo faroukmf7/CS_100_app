@@ -1,4 +1,8 @@
 // lib/presentation/screens/student/history_screen.dart
+//
+// Pure StatelessWidget. Get.find() inside build().
+// fetchHistory triggered via addPostFrameCallback so it runs after
+// the widget is mounted — same effect as initState without StatefulWidget.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -9,26 +13,19 @@ import '../../../data/models/attendance_model.dart';
 import '../../controllers/attendance_controller.dart';
 import '../../controllers/auth_controller.dart';
 
-class HistoryScreen extends StatefulWidget {
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends State<HistoryScreen> {
-  final _ctrl   = Get.find<AttendanceController>();
-  final _auth   = Get.find<AuthController>();
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl.fetchHistory(_auth.currentUser.value?.id ?? 0);
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final ctrl  = Get.find<AttendanceController>();
+    final auth  = Get.find<AuthController>();
     final theme = Theme.of(context);
+
+    // Trigger fetch after the first frame — equivalent to initState.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ctrl.fetchHistory(auth.currentUser.value?.id ?? 0);
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -38,34 +35,35 @@ class _HistoryScreenState extends State<HistoryScreen> {
           onPressed: () => Get.back(),
         ),
       ),
+      // Single Obx wrapping the body — reads isLoadingHistory and history
       body: Obx(() {
-        if (_ctrl.isLoadingHistory.value) {
+        if (ctrl.isLoadingHistory.value) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (_ctrl.history.isEmpty) {
+        if (ctrl.history.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.history_rounded, size: 64, color: Colors.grey[300]),
                 const SizedBox(height: 16),
-                Text('No attendance records yet', style: theme.textTheme.titleMedium),
+                Text('No attendance records yet',
+                    style: theme.textTheme.titleMedium),
                 const SizedBox(height: 8),
                 const Text('Check in to a class to see your history here.',
-                    style: TextStyle(color: AppTheme.kTextSecondary, fontSize: 13)),
+                    style: TextStyle(
+                        color: AppTheme.kTextSecondary, fontSize: 13)),
               ],
             ),
           );
         }
 
-        // Summary stats
-        final total   = _ctrl.history.length;
-        final present = _ctrl.history.where((a) => a.withinRadius).length;
+        final total   = ctrl.history.length;
+        final present = ctrl.history.where((a) => a.withinRadius).length;
         final rate    = AppFormatters.attendanceRate(present, total);
 
         return Column(
           children: [
-            // ── Summary strip ─────────────────────────────────────────────
             Container(
               margin: const EdgeInsets.all(16),
               padding: const EdgeInsets.all(16),
@@ -80,27 +78,32 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _Stat(value: '$total', label: 'Total'),
-                  _Divider(),
-                  _Stat(value: '$present', label: 'Present'),
-                  _Divider(),
+                  _Stat(value: '$total',             label: 'Total'),
+                  _VDivider(),
+                  _Stat(value: '$present',           label: 'Present'),
+                  _VDivider(),
                   _Stat(value: '${total - present}', label: 'Absent'),
-                  _Divider(),
-                  _Stat(value: '${rate.toStringAsFixed(0)}%', label: 'Rate'),
+                  _VDivider(),
+                  _Stat(
+                      value: '${rate.toStringAsFixed(0)}%',
+                      label: 'Rate'),
                 ],
               ),
             ).animate().slideY(begin: -0.1, end: 0, duration: 300.ms).fadeIn(),
 
-            // ── List ──────────────────────────────────────────────────────
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _ctrl.history.length,
+                itemCount: ctrl.history.length,
                 itemBuilder: (ctx, i) {
-                  final record = _ctrl.history[i];
+                  final record = ctrl.history[i];
                   return _HistoryTile(record: record)
                       .animate(delay: Duration(milliseconds: 30 * i))
-                      .slideX(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOut)
+                      .slideX(
+                      begin: 0.1,
+                      end: 0,
+                      duration: 300.ms,
+                      curve: Curves.easeOut)
                       .fadeIn();
                 },
               ),
@@ -112,6 +115,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 }
 
+// ── Sub-widgets ───────────────────────────────────────────────────────────────
+
 class _Stat extends StatelessWidget {
   final String value, label;
   const _Stat({required this.value, required this.label});
@@ -119,13 +124,22 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, fontFamily: 'Nunito')),
-      Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11, fontFamily: 'Nunito')),
+      Text(value,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Nunito')),
+      Text(label,
+          style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontFamily: 'Nunito')),
     ],
   );
 }
 
-class _Divider extends StatelessWidget {
+class _VDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Container(width: 1, height: 32, color: Colors.white24);
@@ -139,7 +153,9 @@ class _HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPresent = record.withinRadius;
     final color     = isPresent ? AppTheme.kSecondary : AppTheme.kError;
-    final icon      = isPresent ? Icons.check_circle_rounded : Icons.cancel_rounded;
+    final icon      = isPresent
+        ? Icons.check_circle_rounded
+        : Icons.cancel_rounded;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -166,19 +182,29 @@ class _HistoryTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(record.className,
-                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'Nunito')),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        fontFamily: 'Nunito')),
                 const SizedBox(height: 2),
                 Text(AppFormatters.formatDateTime(record.checkedInAt),
-                    style: const TextStyle(fontSize: 12, color: AppTheme.kTextSecondary, fontFamily: 'Nunito')),
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.kTextSecondary,
+                        fontFamily: 'Nunito')),
                 if (record.distanceMetres > 0)
-                  Text('${record.distanceMetres.toStringAsFixed(0)}m from classroom',
-                      style: TextStyle(fontSize: 11, color: color.withOpacity(0.8), fontFamily: 'Nunito')),
+                  Text(
+                      '${record.distanceMetres.toStringAsFixed(0)}m from classroom',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: color.withOpacity(0.8),
+                          fontFamily: 'Nunito')),
               ],
             ),
           ),
-          // Method badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(8),
@@ -190,12 +216,17 @@ class _HistoryTile extends StatelessWidget {
                   record.method == CheckInMethod.qrCode
                       ? Icons.qr_code_rounded
                       : Icons.my_location_rounded,
-                  size: 12, color: color,
+                  size: 12,
+                  color: color,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   record.method == CheckInMethod.qrCode ? 'QR' : 'GPS',
-                  style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600, fontFamily: 'Nunito'),
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Nunito'),
                 ),
               ],
             ),

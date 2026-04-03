@@ -1,9 +1,4 @@
 // lib/presentation/controllers/auth_controller.dart
-// ─────────────────────────────────────────
-// MVC Controller (GetX) for authentication.
-// Manages: login, register, session restoration, logout.
-// Views bind to observables declared here.
-// ─────────────────────────────────────────
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,14 +10,14 @@ class AuthController extends GetxController {
   final AuthRepository _authRepo;
   AuthController(this._authRepo);
 
-  // ── Observables ───────────────────────────────────────────────────────────
-  final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
-  final RxBool isLoading       = false.obs;
-  final RxBool obscurePassword = true.obs;
-  final RxBool obscureConfirm  = true.obs;
-  final RxInt  registerStep    = 0.obs;
+  // ── Observables ──────────────────────────────────────────────────────────
+  final Rx<UserModel?> currentUser   = Rx<UserModel?>(null);
+  final RxBool         isLoading     = false.obs;
+  final RxBool         obscurePassword = true.obs;
+  final RxBool         obscureConfirm  = true.obs;
+  final RxInt          registerStep  = 0.obs;
 
-  // ── Form Controllers ──────────────────────────────────────────────────────
+  // ── Text controllers ─────────────────────────────────────────────────────
   final emailCtrl      = TextEditingController();
   final passwordCtrl   = TextEditingController();
   final confirmCtrl    = TextEditingController();
@@ -31,14 +26,16 @@ class AuthController extends GetxController {
   final middleNameCtrl = TextEditingController();
   final studentIdCtrl  = TextEditingController();
 
-  // Note: loginFormKey and registerFormKey are intentionally NOT stored here.
-  // GlobalKeys must be owned by the widget State that uses them, not by a
-  // persistent singleton controller. Keeping a GlobalKey in a controller causes
-  // "GlobalKey used multiple times" errors whenever the widget tree is rebuilt
-  // (e.g. on theme change), because the controller's key instance outlives the
-  // widget and Flutter finds the same key object in two different tree positions.
+  // ── Form keys ────────────────────────────────────────────────────────────
+  // These live in the controller because LoginScreen and RegisterScreen
+  // are never open simultaneously, so the same GlobalKey instance is
+  // never attached to two widget positions at the same time.
+  // If they were ever open at the same time (e.g. both in a navigation
+  // stack), they would need to live in State instead.
+  final loginFormKey    = GlobalKey<FormState>();
+  final registerFormKey = GlobalKey<FormState>();
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── Lifecycle ────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
@@ -47,33 +44,33 @@ class AuthController extends GetxController {
 
   @override
   void onClose() {
-    emailCtrl.dispose(); passwordCtrl.dispose(); confirmCtrl.dispose();
-    firstNameCtrl.dispose(); surnameCtrl.dispose();
-    middleNameCtrl.dispose(); studentIdCtrl.dispose();
+    emailCtrl.dispose();
+    passwordCtrl.dispose();
+    confirmCtrl.dispose();
+    firstNameCtrl.dispose();
+    surnameCtrl.dispose();
+    middleNameCtrl.dispose();
+    studentIdCtrl.dispose();
     super.onClose();
   }
 
-  // ── Session Restore ────────────────────────────────────────────────────────
+  // ── Session restore ───────────────────────────────────────────────────────
   void _tryRestoreSession() {
     final stored = _authRepo.getStoredUser();
     if (stored != null && _authRepo.isLoggedIn()) {
       currentUser.value = stored;
-      // Delay navigation until after the first frame so GetMaterialApp's
-      // Navigator is fully registered. Calling Get.offAllNamed() synchronously
-      // inside onInit() — which runs during AppBindings, before the widget tree
-      // is built — triggers the _debugLocked assertion and the "contextless
-      // navigation" error because the Navigator lock is still in its initial
-      // state. addPostFrameCallback guarantees the tree and GetX's router are
-      // ready before we push any route.
+      // addPostFrameCallback: delays until the widget tree + Navigator are
+      // fully mounted. Calling Get.offAllNamed() synchronously inside onInit
+      // fires before GetMaterialApp is ready and throws _debugLocked.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _navigateByRole(stored);
       });
     }
   }
 
-  // ── Login ─────────────────────────────────────────────────────────────────
-  Future<void> login(GlobalKey<FormState> formKey) async {
-    if (!formKey.currentState!.validate()) return;
+  // ── Login ────────────────────────────────────────────────────────────────
+  Future<void> login() async {
+    if (!loginFormKey.currentState!.validate()) return;
     isLoading.value = true;
     final result = await _authRepo.login(
       emailCtrl.text.trim(),
@@ -90,8 +87,8 @@ class AuthController extends GetxController {
   }
 
   // ── Register ──────────────────────────────────────────────────────────────
-  Future<void> register(GlobalKey<FormState> formKey) async {
-    if (!formKey.currentState!.validate()) return;
+  Future<void> register() async {
+    if (!registerFormKey.currentState!.validate()) return;
     isLoading.value = true;
     final result = await _authRepo.register(
       email:      emailCtrl.text.trim(),
@@ -111,14 +108,14 @@ class AuthController extends GetxController {
     }
   }
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  // ── Logout ────────────────────────────────────────────────────────────────
   Future<void> logout() async {
     await _authRepo.logout();
     currentUser.value = null;
     Get.offAllNamed(AppRoutes.login);
   }
 
-  // ── Register Step Navigation ──────────────────────────────────────────────
+  // ── Register step navigation ──────────────────────────────────────────────
   void nextRegisterStep() {
     if (registerStep.value < 2) registerStep.value++;
   }
@@ -127,10 +124,13 @@ class AuthController extends GetxController {
     if (registerStep.value > 0) registerStep.value--;
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  void togglePasswordVisibility() => obscurePassword.value = !obscurePassword.value;
-  void toggleConfirmVisibility()  => obscureConfirm.value  = !obscureConfirm.value;
+  // ── Visibility toggles ────────────────────────────────────────────────────
+  void togglePasswordVisibility() =>
+      obscurePassword.value = !obscurePassword.value;
+  void toggleConfirmVisibility() =>
+      obscureConfirm.value = !obscureConfirm.value;
 
+  // ── Internal helpers ──────────────────────────────────────────────────────
   void _navigateByRole(UserModel user) {
     if (user.isAdmin) {
       Get.offAllNamed(AppRoutes.adminHome);

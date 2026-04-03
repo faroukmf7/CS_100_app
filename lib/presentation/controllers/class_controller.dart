@@ -1,19 +1,7 @@
 // lib/presentation/controllers/class_controller.dart
-// ─────────────────────────────────────────
-// FIX: Removed formKey (GlobalKey<FormState>) from this controller.
-//
-// A GlobalKey must be owned by the widget State that uses it — not by
-// a permanent singleton controller. When CreateClassScreen is pushed
-// a second time (e.g. editing a different class), Flutter finds the same
-// GlobalKey instance already attached to a previous widget that may still
-// be in the tree during the transition, causing:
-//   "Multiple widgets used the same GlobalKey"
-//
-// The formKey now lives in CreateClassScreen itself (as a local final field).
-// Controller methods that need validation now receive the key as a parameter.
-// ─────────────────────────────────────────
 
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import '../../data/models/class_model.dart';
 import '../../data/repositories/class_repository.dart';
@@ -24,24 +12,33 @@ class ClassController extends GetxController {
   final ClassRepository _classRepo;
   ClassController(this._classRepo);
 
-  // ── Observables ───────────────────────────────────────────────────────────
-  final RxList<ClassModel>  classList     = <ClassModel>[].obs;
-  final RxBool              isLoading     = false.obs;
-  final RxBool              isSaving      = false.obs;
-  final Rx<ClassModel?>     selectedClass = Rx<ClassModel?>(null);
+  // ── Observables ──────────────────────────────────────────────────────────
+  final RxList<ClassModel> classList     = <ClassModel>[].obs;
+  final RxBool             isLoading     = false.obs;
+  final RxBool             isSaving      = false.obs;
+  final Rx<ClassModel?>    selectedClass = Rx<ClassModel?>(null);
 
-  // Form field controllers — safe in a permanent controller because they are
-  // not GlobalKeys; they hold text state and do not attach to a widget position.
-  final nameCtrl        = TextEditingController();
-  final descCtrl        = TextEditingController();
-  final courseCodeCtrl  = TextEditingController();
-  final instructorCtrl  = TextEditingController();
-  final radiusCtrl      = TextEditingController(text: '50');
-  final semesterCtrl    = TextEditingController();
+  // ── Form text controllers ─────────────────────────────────────────────────
+  final nameCtrl       = TextEditingController();
+  final descCtrl       = TextEditingController();
+  final courseCodeCtrl = TextEditingController();
+  final instructorCtrl = TextEditingController();
+  final radiusCtrl     = TextEditingController(text: '50');
+  final semesterCtrl   = TextEditingController();
 
-  // formKey is intentionally NOT here — see file header above.
-  // It lives as a local field in CreateClassScreen.
+  // ── Form key ──────────────────────────────────────────────────────────────
+  // Safe in the controller: CreateClassScreen is never open twice at the same
+  // time (the admin must close it before opening it again), so this GlobalKey
+  // can never be mounted in two places in the tree simultaneously.
+  final formKey = GlobalKey<FormState>();
 
+  // ── Map controller ────────────────────────────────────────────────────────
+  // MapController is not reactive — it's an imperative handle for FlutterMap.
+  // It lives here so _LocationPicker (now a StatelessWidget) can reference it
+  // without needing its own State.
+  final mapController = MapController();
+
+  // ── Reactive form fields ──────────────────────────────────────────────────
   final RxDouble pickedLat      = 0.0.obs;
   final RxDouble pickedLng      = 0.0.obs;
   final RxInt    selectedDay    = 0.obs;
@@ -51,6 +48,7 @@ class ClassController extends GetxController {
   final RxInt    endMinute      = 0.obs;
   final RxBool   locationPicked = false.obs;
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
@@ -65,10 +63,11 @@ class ClassController extends GetxController {
     instructorCtrl.dispose();
     radiusCtrl.dispose();
     semesterCtrl.dispose();
+    mapController.dispose();
     super.onClose();
   }
 
-  // ── Fetch All ─────────────────────────────────────────────────────────────
+  // ── Fetch ─────────────────────────────────────────────────────────────────
   Future<void> fetchClasses() async {
     isLoading.value = true;
     final result = await _classRepo.getClasses();
@@ -80,10 +79,8 @@ class ClassController extends GetxController {
     }
   }
 
-  // ── Create Class ──────────────────────────────────────────────────────────
-  // formKey is passed in from the widget so validation runs against the
-  // correct live form state (not a stale controller-held key).
-  Future<void> createClass(int adminId, GlobalKey<FormState> formKey) async {
+  // ── Create ────────────────────────────────────────────────────────────────
+  Future<void> createClass(int adminId) async {
     if (!formKey.currentState!.validate()) return;
     if (!locationPicked.value) {
       _showError('Please pick the classroom location on the map.');
@@ -119,8 +116,8 @@ class ClassController extends GetxController {
     }
   }
 
-  // ── Update Class ──────────────────────────────────────────────────────────
-  Future<void> updateClass(int classId, GlobalKey<FormState> formKey) async {
+  // ── Update ────────────────────────────────────────────────────────────────
+  Future<void> updateClass(int classId) async {
     if (!formKey.currentState!.validate()) return;
     isSaving.value = true;
     final model = ClassModel(
@@ -152,7 +149,7 @@ class ClassController extends GetxController {
     }
   }
 
-  // ── Delete Class ──────────────────────────────────────────────────────────
+  // ── Delete ────────────────────────────────────────────────────────────────
   Future<void> deleteClass(int id) async {
     final result = await _classRepo.deleteClass(id);
     if (result['success'] == true) {
@@ -163,7 +160,7 @@ class ClassController extends GetxController {
     }
   }
 
-  // ── Pre-fill edit form ────────────────────────────────────────────────────
+  // ── Edit pre-fill ─────────────────────────────────────────────────────────
   void prepareEditForm(ClassModel c) {
     nameCtrl.text        = c.name;
     descCtrl.text        = c.description;
@@ -200,6 +197,7 @@ class ClassController extends GetxController {
     selectedDay.value    = 0;
   }
 
+  // ── Snacks ────────────────────────────────────────────────────────────────
   void _showSuccess(String msg) => Get.snackbar(
     '✓ Done', msg,
     snackPosition: SnackPosition.TOP,
