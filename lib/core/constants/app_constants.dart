@@ -11,7 +11,7 @@ class AppConstants {
   /// Change this to your PHP backend URL before going live.
   /// e.g. 'https://yourserver.com/attendance_api'
   //static const String kBaseUrl = 'https://admin.flashdatagh.com/myapp/attendance_api'; // Android emulator
-  static const String kBaseUrl = 'http://192.168.1.236/attendance_api'; // iOS simulator
+  static const String kBaseUrl = 'http://admin.flashdatagh.com/myapp/attendance_api'; // iOS simulator
 
   // PHP Endpoint reference (for backend developer):
   // POST   /auth/login.php          → {email, password}
