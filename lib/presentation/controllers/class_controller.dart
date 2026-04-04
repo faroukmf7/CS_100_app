@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import '../../data/models/class_model.dart';
 import '../../data/repositories/class_repository.dart';
 import '../../core/constants/app_constants.dart';
-import '../../core/utils/app_utils.dart';
 
 class ClassController extends GetxController {
   final ClassRepository _classRepo;

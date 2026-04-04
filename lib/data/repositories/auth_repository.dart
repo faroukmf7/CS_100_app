@@ -13,7 +13,6 @@
 // ─────────────────────────────────────────
 
 import 'dart:convert';
-import 'package:flutter/widgets.dart';
 import 'package:get_storage/get_storage.dart';
 import '../models/user_model.dart';
 import '../providers/api_provider.dart';
@@ -93,8 +92,9 @@ class AuthRepository {
       if (data['status'] == true) {
         // FIX B: Use the token + user that register.php already returned.
         // No second login() call needed — that was an extra unnecessary round-trip.
-        final nested = data['data'] as Map<String, dynamic>? ?? {};
-        final user   = UserModel.fromJson(nested['user'] as Map<String, dynamic>);
+        print(data['data']);
+        final nested = data['user'] as Map<String, dynamic>? ?? {};
+        final user   = UserModel.fromJson(nested);
         final token  = nested['token'] as String? ?? '';
 
         await _storage.write(AppConstants.kUserKey,  jsonEncode(user.toJson()));

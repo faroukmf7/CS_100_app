@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/app_utils.dart';
 import '../../controllers/class_controller.dart';
 
 class AnalyticsScreen extends StatelessWidget {
