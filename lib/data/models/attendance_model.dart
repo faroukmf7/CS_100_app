@@ -38,9 +38,7 @@ class AttendanceModel {
 
   bool get isCheckedOut => checkedOutAt != null;
 
-  Duration? get sessionDuration => checkedOutAt != null
-      ? checkedOutAt!.difference(checkedInAt)
-      : null;
+  Duration? get sessionDuration => checkedOutAt?.difference(checkedInAt);
 
   factory AttendanceModel.fromJson(Map<String, dynamic> json) => AttendanceModel(
     id:              json['id']              as int? ?? 0,

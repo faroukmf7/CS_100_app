@@ -5,7 +5,6 @@
 // A fresh instance is created every visit and disposed when the screen pops.
 
 import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -13,7 +12,6 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../../core/utils/app_utils.dart';
 import '../../data/models/attendance_model.dart';
-import '../../data/models/class_model.dart';
 import 'attendance_controller.dart';
 import 'class_controller.dart';
 

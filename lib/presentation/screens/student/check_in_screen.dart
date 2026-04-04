@@ -16,7 +16,6 @@ import 'dart:math' as math;
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_utils.dart';
-import '../../../data/models/attendance_model.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/attendance_controller.dart';
 import '../../controllers/class_controller.dart';

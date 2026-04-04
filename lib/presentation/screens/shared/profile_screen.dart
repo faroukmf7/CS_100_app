@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/utils/app_utils.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/theme_controller.dart';
 
@@ -107,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
           // ── App info ─────────────────────────────────────────────────────
           _Section(title: 'App'),
           _ProfileTile(icon: Icons.info_outline_rounded, label: 'Version', value: '1.0.0'),
-          _ProfileTile(icon: Icons.code_rounded, label: 'Built with', value: 'Flutter + GetX'),
+          //_ProfileTile(icon: Icons.code_rounded, label: 'Built with', value: 'Flutter + GetX'),
 
           const SizedBox(height: 28),
 
@@ -217,7 +216,7 @@ class _ToggleTile extends StatelessWidget {
           Icon(icon, size: 18, color: AppTheme.kPrimary),
           const SizedBox(width: 12),
           Expanded(child: Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'Nunito'))),
-          Switch(value: value, onChanged: (_) => onToggle(), activeColor: AppTheme.kPrimary),
+          Switch(value: value, onChanged: (_) => onToggle(), activeThumbColor: AppTheme.kPrimary),
         ],
       ),
     );

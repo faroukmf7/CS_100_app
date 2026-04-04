@@ -12,8 +12,6 @@ import 'package:get/get.dart';
 import '../../data/models/attendance_model.dart';
 import '../../data/models/class_model.dart';
 import '../../data/repositories/attendance_repository.dart';
-import '../../core/constants/app_constants.dart';
-import '../../core/utils/app_utils.dart';
 
 enum CheckInState { idle, fetchingLocation, calculating, success, error }
 

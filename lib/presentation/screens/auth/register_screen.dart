@@ -4,7 +4,6 @@
 // Every Obx() wraps ONLY the widget that reads an observable.
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_theme.dart';

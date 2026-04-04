@@ -1,11 +1,11 @@
 {
-    "name": "cs_100_project",
-    "short_name": "cs_100_project",
+    "name": "attedance_app",
+    "short_name": "attedance_app",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "The attendance for CS 100",
+    "description": "My class app for marking attendance",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

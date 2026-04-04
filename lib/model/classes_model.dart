@@ -45,11 +45,7 @@ class Classes{
 
   @override
   String toString() {
-    return 'Classes{' +
-        ' id: $id,' +
-        ' className: $className,' +
-        ' description: $description,' +
-        ' dayOfWeek: $dayOfWeek,' +
+    return 'Classes{' ' id: $id,' ' className: $className,' ' description: $description,' ' dayOfWeek: $dayOfWeek,' +
         ' startTime: $startTime,' +
         ' endTime: $endTime,' +
         ' teacher: $teacher,' +
@@ -78,13 +74,13 @@ class Classes{
 
   Map<String, dynamic> toMap() {
     return {
-      'id': this.id,
-      'className': this.className,
-      'description': this.description,
-      'dayOfWeek': this.dayOfWeek,
-      'startTime': this.startTime,
-      'endTime': this.endTime,
-      'teacher': this.teacher,
+      'id': id,
+      'className': className,
+      'description': description,
+      'dayOfWeek': dayOfWeek,
+      'startTime': startTime,
+      'endTime': endTime,
+      'teacher': teacher,
     };
   }
 

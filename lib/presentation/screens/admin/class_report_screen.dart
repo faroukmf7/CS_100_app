@@ -8,7 +8,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_utils.dart';
-import '../../../data/models/attendance_model.dart';
 import '../../controllers/class_controller.dart';
 import '../../controllers/report_controller.dart';
 

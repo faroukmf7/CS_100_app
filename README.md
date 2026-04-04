@@ -1,6 +1,6 @@
-# cs_100_project
+# attedance_app
 
-The attendance for CS 100
+My class app for marking attendance
 
 ## Getting Started
 
